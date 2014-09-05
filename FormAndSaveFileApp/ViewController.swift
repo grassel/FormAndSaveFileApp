@@ -39,11 +39,14 @@ class ViewController: UIViewController {
             
             if (theWriteError == nil) {
                 println("No problem, we could save the file and the content was \(theTxtFileString)");
+                showToast("Success", message: "The file has been saved", buttonLabel: "Ok");
             } else {
                 println("We encountered and error: \(theWriteError)");
+                showToast("Error saving file", message: "Failed to write file", buttonLabel: "Ok");
             }
         } else {
             println("The file \(thePathToTheFile) exists already");
+            showToast("Error saving file", message: "A file with the same name exists already", buttonLabel: "Ok");
         }
         
         theNameTextField.resignFirstResponder();
@@ -52,15 +55,24 @@ class ViewController: UIViewController {
     }
     
     @IBAction func theLoadFileMethod(sender: AnyObject) {
-        var theReadError : NSError?
+       
+        let theFileManager = NSFileManager.defaultManager();
         var theInfoFromFile : String!
+        var theReadError : NSError?
         
         theInfoFromFile = String.stringWithContentsOfFile(thePathToTheFile, encoding: NSUTF8StringEncoding, error: &theReadError);
+        
+
+        if (!theFileManager.fileExistsAtPath(thePathToTheFile)) {
+            println("Nothing to read, file \(thePathToTheFile) does not exist. Ignoring request");
+            showToast("Error", message: "Could not read the file, file does not exist.", buttonLabel: "Ok");
+        }
         
         if (theInfoFromFile != nil) {
             println("No problem, we could read from file and the content was \(theInfoFromFile)");
         } else {
             println("We encountered and error: \(theReadError)");
+            showToast("Error", message: "Could not read the file, though it exists.", buttonLabel: "Ok");
         }
         theLabel.text = theInfoFromFile;
     }
@@ -71,14 +83,26 @@ class ViewController: UIViewController {
         
         if (!theFileManager.fileExistsAtPath(thePathToTheFile)) {
              println("Nothing to delete, file \(thePathToTheFile) does not exist. Ignoring request");
-            return;
+            
+            // show a toast informing the user
+            self.showToast("Warning", message: "File does not exist, nothing to delete.", buttonLabel: "Ok");
+                return;
         }
         
         if(theFileManager.removeItemAtPath(thePathToTheFile, error: &theDeleteError)) {
             println("No problem, we could delete file \(thePathToTheFile)");
+            showToast("Success", message: "The file has been deleted", buttonLabel: "Ok");
         } else {
             println("Failed to delete file \(thePathToTheFile), error was \(theDeleteError)");
+            showToast("Error", message: "Could not delete the file, though it exists.", buttonLabel: "Ok");
         }
+    }
+    
+    func showToast(title:String, message:String, buttonLabel:String) {
+        // show a toast informing the user
+        var alert = UIAlertController(title: title, message: message, preferredStyle: UIAlertControllerStyle.Alert)
+        alert.addAction(UIAlertAction(title: buttonLabel, style: UIAlertActionStyle.Default, handler: nil))
+        self.presentViewController(alert, animated: true, completion: nil)
     }
     
     override func didReceiveMemoryWarning() {
